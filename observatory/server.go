@@ -147,7 +147,7 @@ func (c *Collector) Run(ctx context.Context) error {
 			if typ != websocket.BinaryMessage {
 				continue
 			}
-			var observation protocol.Observation
+			var observation protocol.TargetObservation
 			err = json.Unmarshal(data, &observation)
 			if err != nil {
 				c.logger.Error(err, "error unmarshalling message from client")
@@ -191,10 +191,10 @@ type serverStatus struct {
 	targets []config.Target
 }
 
-func (s *serverStatus) Put(observation *protocol.Observation, source string) {
+func (s *serverStatus) Put(observation *protocol.TargetObservation, source string) {
 	entry := protocol.SourcedObservation{
-		Observation: *observation,
-		Source:      source,
+		TargetObservation: *observation,
+		Source:            source,
 	}
 
 	s.mu.Lock()

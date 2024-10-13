@@ -21,9 +21,13 @@ func (t TimeStamp) MarshalJSON() ([]byte, error) {
 	return json.Marshal(time.Time(t).UnixMilli())
 }
 
+type TargetObservation struct {
+	Target Target `json:"target"`
+	Observation
+}
+
 type Observation struct {
 	Time    TimeStamp `json:"time"`
-	Target  Target    `json:"target"`
 	Online  bool      `json:"online"`
 	Latency uint32    `json:"latency"`
 }

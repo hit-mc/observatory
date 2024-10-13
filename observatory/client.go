@@ -20,7 +20,7 @@ func RunClient(ctx context.Context, cfg *config.Client, logger logr.Logger) {
 	// [Communicator] -> [intermediate goroutine] -> [Pinger]
 	configUpdates := make(chan *protocol.ServerPushInfo, 8)
 	// [Pinger] -> [Communicator]
-	pingResults := make(chan *protocol.Observation, cfg.SendBuffer)
+	pingResults := make(chan *protocol.TargetObservation, cfg.SendBuffer)
 
 	pinger := Pinger{
 		Logger:   logger.WithName("pinger"),
@@ -69,7 +69,7 @@ func RunClient(ctx context.Context, cfg *config.Client, logger logr.Logger) {
 type Observer struct {
 	serverAddr           string
 	interval             time.Duration
-	observations         chan *protocol.Observation
+	observations         chan *protocol.TargetObservation
 	logger               logr.Logger
 	reconnectInterval    time.Duration
 	reportConnectTimeout time.Duration
@@ -103,7 +103,7 @@ type Pinger struct {
 	targets  []protocol.Target
 	mu       sync.RWMutex
 	Logger   logr.Logger
-	Output   chan<- *protocol.Observation
+	Output   chan<- *protocol.TargetObservation
 	Interval time.Duration
 }
 
@@ -139,22 +139,26 @@ func (p *Pinger) ping() {
 	}
 }
 
-func ping0(target protocol.Target, log logr.Logger) *protocol.Observation {
+func ping0(target protocol.Target, log logr.Logger) *protocol.TargetObservation {
 	t := time.Now()
 	_, latency, err := ping.Ping(target.Host, int(target.Port))
 	if err != nil {
 		log.Error(err, "ping failed", "target", target.String())
-		return &protocol.Observation{
-			Time:   protocol.TimeStamp(t),
+		return &protocol.TargetObservation{
 			Target: target,
-			Online: false,
+			Observation: protocol.Observation{
+				Time:   protocol.TimeStamp(t),
+				Online: false,
+			},
 		}
 	}
-	return &protocol.Observation{
-		Time:    protocol.TimeStamp(t),
-		Target:  target,
-		Online:  true,
-		Latency: uint32(latency),
+	return &protocol.TargetObservation{
+		Target: target,
+		Observation: protocol.Observation{
+			Time:    protocol.TimeStamp(t),
+			Online:  true,
+			Latency: uint32(latency),
+		},
 	}
 }
 
@@ -172,8 +176,8 @@ type Communicator struct {
 	ObserverID        string
 	Logger            logr.Logger
 	ConfigUpdate      chan<- *protocol.ServerPushInfo
-	StateReport       <-chan *protocol.Observation
-	sendBuffer        []*protocol.Observation // states that are taken out but not sent
+	StateReport       <-chan *protocol.TargetObservation
+	sendBuffer        []*protocol.TargetObservation // states that are taken out but not sent
 }
 
 // Run blocks until StateReport or ctx is closed
@@ -220,7 +224,7 @@ func (c *Communicator) run(ctx context.Context) error {
 
 	c.ConfigUpdate <- serverConfig
 
-	sendData := func(ob *protocol.Observation) error {
+	sendData := func(ob *protocol.TargetObservation) error {
 		data, err := json.Marshal(*ob)
 		if err != nil {
 			c.Logger.Error(err, "error marshalling observation result, drop")

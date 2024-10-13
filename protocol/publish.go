@@ -6,6 +6,6 @@ type TargetStat struct {
 }
 
 type SourcedObservation struct {
-	Observation
+	TargetObservation
 	Source string `json:"source,omitempty"`
 }
