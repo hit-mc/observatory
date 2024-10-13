@@ -1,11 +1,18 @@
 package protocol
 
+import "github.com/hit-mc/observatory/config"
+
 type TargetStat struct {
-	Target       Target               `json:"target"`
-	Observations []SourcedObservation `json:"observations"`
+	Target       config.Target       `json:"target"`
+	Observations []SourceObservation `json:"observations"`
 }
 
-type SourcedObservation struct {
+type SourceObservation struct {
+	Observation
+	Source string `json:"source,omitempty"`
+}
+
+type TargetSourceObservation struct {
 	TargetObservation
 	Source string `json:"source,omitempty"`
 }

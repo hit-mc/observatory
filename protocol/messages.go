@@ -27,7 +27,10 @@ type TargetObservation struct {
 }
 
 type Observation struct {
-	Time    TimeStamp `json:"time"`
-	Online  bool      `json:"online"`
-	Latency uint32    `json:"latency"`
+	Time        TimeStamp `json:"time"`
+	Online      bool      `json:"online"`
+	Latency     uint32    `json:"latency"`
+	Description string    `json:"description"`
+	Players     int       `json:"players"`
+	MaxPlayers  int       `json:"max_players"`
 }

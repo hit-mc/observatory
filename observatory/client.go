@@ -141,7 +141,7 @@ func (p *Pinger) ping() {
 
 func ping0(target protocol.Target, log logr.Logger) *protocol.TargetObservation {
 	t := time.Now()
-	_, latency, err := ping.Ping(target.Host, int(target.Port))
+	resp, latency, err := ping.Ping(target.Host, int(target.Port))
 	if err != nil {
 		log.Error(err, "ping failed", "target", target.String())
 		return &protocol.TargetObservation{
@@ -152,12 +152,16 @@ func ping0(target protocol.Target, log logr.Logger) *protocol.TargetObservation 
 			},
 		}
 	}
+	info := resp.Infos()
 	return &protocol.TargetObservation{
 		Target: target,
 		Observation: protocol.Observation{
-			Time:    protocol.TimeStamp(t),
-			Online:  true,
-			Latency: uint32(latency),
+			Time:        protocol.TimeStamp(t),
+			Online:      true,
+			Latency:     uint32(latency),
+			Description: info.Description,
+			Players:     info.Players.Online,
+			MaxPlayers:  info.Players.Max,
 		},
 	}
 }

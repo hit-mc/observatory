@@ -24,9 +24,9 @@ type Client struct {
 }
 
 type Target struct {
-	Name string `toml:"name"`
-	Host string `toml:"host"`
-	Port int    `toml:"port"`
+	Name string `toml:"name" json:"name"`
+	Host string `toml:"host" json:"host"`
+	Port int    `toml:"port" json:"port"`
 }
 
 func Read[T any](path string) (ret *T, err error) {

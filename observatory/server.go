@@ -180,19 +180,19 @@ func (c *Collector) Run(ctx context.Context) error {
 
 func newServerStatus(targets []config.Target) serverStatus {
 	return serverStatus{
-		status:  make(map[protocol.Target][]protocol.SourcedObservation),
+		status:  make(map[protocol.Target][]protocol.TargetSourceObservation),
 		targets: targets,
 	}
 }
 
 type serverStatus struct {
 	mu      sync.RWMutex
-	status  map[protocol.Target][]protocol.SourcedObservation
+	status  map[protocol.Target][]protocol.TargetSourceObservation
 	targets []config.Target
 }
 
 func (s *serverStatus) Put(observation *protocol.TargetObservation, source string) {
-	entry := protocol.SourcedObservation{
+	entry := protocol.TargetSourceObservation{
 		TargetObservation: *observation,
 		Source:            source,
 	}
@@ -208,7 +208,7 @@ func (s *serverStatus) Put(observation *protocol.TargetObservation, source strin
 	}
 	// add new entry if not exist
 	s.status[observation.Target] = append(s.status[observation.Target], entry)
-	slices.SortFunc(s.status[observation.Target], func(a, b protocol.SourcedObservation) int {
+	slices.SortFunc(s.status[observation.Target], func(a, b protocol.TargetSourceObservation) int {
 		return cmp.Compare(a.Source, b.Source)
 	})
 done:
@@ -235,7 +235,7 @@ func (s *serverStatus) purge() {
 	}
 }
 
-func shrink(s []protocol.SourcedObservation) []protocol.SourcedObservation {
+func shrink(s []protocol.TargetSourceObservation) []protocol.TargetSourceObservation {
 	i := 0 // slow pointer
 	j := 0 // fast pointer
 	for j < len(s) {
@@ -262,8 +262,14 @@ func (s *serverStatus) GetStats() []protocol.TargetStat {
 			Port: uint16(item.Port),
 		}
 		return protocol.TargetStat{
-			Target:       target,
-			Observations: s.status[target],
+			Target: item,
+			Observations: lo.Map(s.status[target],
+				func(item protocol.TargetSourceObservation, _ int) protocol.SourceObservation {
+					return protocol.SourceObservation{
+						Observation: item.Observation,
+						Source:      item.Source,
+					}
+				}),
 		}
 	})
 }

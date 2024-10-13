@@ -11,7 +11,7 @@ func Fuzz_shrink(f *testing.F) {
 	f.Fuzz(func(t *testing.T, seed int64) {
 		s := rand.NewSource(seed)
 		n := s.Int63() % 1023
-		ss := make([]protocol.SourcedObservation, n)
+		ss := make([]protocol.TargetSourceObservation, n)
 		nonzero := protocol.TimeStamp(time.Unix(10000, 10000))
 		n2 := 0
 		for i := int64(0); i < n; i++ {
