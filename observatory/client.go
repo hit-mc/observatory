@@ -110,6 +110,7 @@ type Pinger struct {
 func (p *Pinger) Run(ctx context.Context) {
 	tk := time.NewTicker(p.Interval)
 	defer tk.Stop()
+	p.ping()
 	for {
 		select {
 		case <-ctx.Done():
