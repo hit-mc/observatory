@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/hit-mc/observatory/config"
 	"github.com/hit-mc/observatory/protocol"
+	"github.com/samber/lo"
 	"io"
 	"net"
 	"net/http"
@@ -35,7 +36,7 @@ func NewCollector(
 		listen:           listen,
 		handshakeTimeout: handshakeTimeout,
 		logger:           logger,
-		stats:            newServerStatus(),
+		stats:            newServerStatus(targets),
 		token:            token,
 		targets:          targets2,
 	}
@@ -177,15 +178,17 @@ func (c *Collector) Run(ctx context.Context) error {
 	return nil
 }
 
-func newServerStatus() serverStatus {
+func newServerStatus(targets []config.Target) serverStatus {
 	return serverStatus{
-		status: make(map[protocol.Target][]protocol.SourcedObservation),
+		status:  make(map[protocol.Target][]protocol.SourcedObservation),
+		targets: targets,
 	}
 }
 
 type serverStatus struct {
-	mu     sync.RWMutex
-	status map[protocol.Target][]protocol.SourcedObservation
+	mu      sync.RWMutex
+	status  map[protocol.Target][]protocol.SourcedObservation
+	targets []config.Target
 }
 
 func (s *serverStatus) Put(observation *protocol.Observation, source string) {
@@ -250,12 +253,17 @@ func shrink(s []protocol.SourcedObservation) []protocol.SourcedObservation {
 	return s
 }
 
-func (s *serverStatus) GetStats() protocol.TargetStats {
+func (s *serverStatus) GetStats() []protocol.TargetStat {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	ret := make(protocol.TargetStats, len(s.status))
-	for t, os := range s.status {
-		ret[t.String()] = os
-	}
-	return ret
+	return lo.Map(s.targets, func(item config.Target, _ int) protocol.TargetStat {
+		target := protocol.Target{
+			Host: item.Host,
+			Port: uint16(item.Port),
+		}
+		return protocol.TargetStat{
+			Target:       target,
+			Observations: s.status[target],
+		}
+	})
 }

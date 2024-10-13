@@ -24,6 +24,7 @@ type Client struct {
 }
 
 type Target struct {
+	Name string `toml:"name"`
 	Host string `toml:"host"`
 	Port int    `toml:"port"`
 }

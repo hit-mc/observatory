@@ -1,6 +1,9 @@
 package protocol
 
-type TargetStats map[string][]SourcedObservation
+type TargetStat struct {
+	Target       Target               `json:"target"`
+	Observations []SourcedObservation `json:"observations"`
+}
 
 type SourcedObservation struct {
 	Observation
