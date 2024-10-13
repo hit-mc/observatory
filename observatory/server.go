@@ -24,6 +24,7 @@ func NewCollector(
 	logger logr.Logger,
 	token string,
 	targets []config.Target,
+	observationLiveTime time.Duration,
 ) *Collector {
 	targets2 := make([]protocol.Target, len(targets))
 	for i := range targets {
@@ -36,7 +37,7 @@ func NewCollector(
 		listen:           listen,
 		handshakeTimeout: handshakeTimeout,
 		logger:           logger,
-		stats:            newServerStatus(targets),
+		stats:            newServerStatus(targets, observationLiveTime),
 		token:            token,
 		targets:          targets2,
 	}
@@ -178,17 +179,19 @@ func (c *Collector) Run(ctx context.Context) error {
 	return nil
 }
 
-func newServerStatus(targets []config.Target) serverStatus {
+func newServerStatus(targets []config.Target, observationLiveTime time.Duration) serverStatus {
 	return serverStatus{
-		status:  make(map[protocol.Target][]protocol.TargetSourceObservation),
-		targets: targets,
+		status:              make(map[protocol.Target][]protocol.TargetSourceObservation),
+		targets:             targets,
+		observationLiveTime: observationLiveTime,
 	}
 }
 
 type serverStatus struct {
-	mu      sync.RWMutex
-	status  map[protocol.Target][]protocol.TargetSourceObservation
-	targets []config.Target
+	mu                  sync.RWMutex
+	status              map[protocol.Target][]protocol.TargetSourceObservation
+	targets             []config.Target
+	observationLiveTime time.Duration
 }
 
 func (s *serverStatus) Put(observation *protocol.TargetObservation, source string) {
@@ -218,8 +221,7 @@ done:
 // purge removes state entries lived longer than 180s
 // Note: caller should hold write lock
 func (s *serverStatus) purge() {
-	const ttl = 180 * time.Second
-	t0 := time.Now().Add(-ttl)
+	t0 := time.Now().Add(-s.observationLiveTime)
 	for target := range s.status {
 		ss := s.status[target]
 		purged := false

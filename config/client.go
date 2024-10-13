@@ -7,10 +7,11 @@ import (
 )
 
 type Server struct {
-	Listen           string   `toml:"listen"`
-	HandshakeTimeout int      `toml:"handshake_timeout"`
-	Token            string   `toml:"token"`
-	Targets          []Target `toml:"targets"`
+	Listen              string   `toml:"listen"`
+	HandshakeTimeout    int      `toml:"handshake_timeout"`
+	ObservationLiveTime int      `toml:"observation_live_time"`
+	Token               string   `toml:"token"`
+	Targets             []Target `toml:"targets"`
 }
 
 type Client struct {

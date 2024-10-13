@@ -69,7 +69,11 @@ func runCollector(ctx context.Context, configFile string, logger logr.Logger) {
 	}
 
 	handshakeTimeout := time.Duration(cfg.HandshakeTimeout) * time.Millisecond
-	s := observatory.NewCollector(cfg.Listen, handshakeTimeout, logger, cfg.Token, cfg.Targets)
+	observationLiveTime := time.Duration(cfg.ObservationLiveTime) * time.Millisecond
+	if observationLiveTime < time.Second {
+		observationLiveTime = 300 * time.Second
+	}
+	s := observatory.NewCollector(cfg.Listen, handshakeTimeout, logger, cfg.Token, cfg.Targets, observationLiveTime)
 	err = s.Run(ctx)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic(err)
